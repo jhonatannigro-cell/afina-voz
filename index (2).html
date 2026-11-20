@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Afina Voz</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#14171a;--mut:#6b7280;--bd:#e3e6ea;--ac:#4f46e5;--ok:#16a34a;--bad:#dc2626;--mid:#d97706;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111317;--card:#1b1e24;--tx:#f1f3f5;--mut:#9aa1ab;--bd:#2a2e36;--ac:#818cf8}}
+:root[data-theme="dark"]{--bg:#111317;--card:#1b1e24;--tx:#f1f3f5;--mut:#9aa1ab;--bd:#2a2e36;--ac:#818cf8}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;max-width:480px;margin:auto;padding:14px 14px 90px}
+h1{font-size:20px;margin:4px 0 12px}
+.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px);max-width:480px;margin:auto}
+.tabs button{flex:1;border:0;background:none;color:var(--mut);padding:14px 4px;font-size:14px;font-weight:600}
+.tabs button.on{color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:10px}
+.song{display:flex;align-items:center;gap:10px}
+.song .n{flex:1}.song small{color:var(--mut);display:block}
+select,input,button.b{font:inherit;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:10px;padding:8px}
+button.b{background:var(--ac);color:#fff;border:0;font-weight:600;padding:10px 16px}
+.row{display:flex;gap:8px;margin-top:8px}.row input{flex:1;min-width:0}
+.sel{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.stage{display:flex;gap:18px;align-items:center;justify-content:center;margin:10px 0}
+.thermo{width:56px;height:260px;border-radius:28px;border:3px solid var(--bd);position:relative;overflow:hidden;background:var(--bg)}
+.fill{position:absolute;bottom:0;left:0;right:0;height:5%;background:var(--mut);transition:background .15s,height .15s}
+.mid{position:absolute;left:0;right:0;top:50%;height:2px;background:var(--bd)}
+.big{font-size:64px;font-weight:700;text-align:center;line-height:1}
+.status{text-align:center;font-weight:700;font-size:18px;min-height:26px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.stats div{background:var(--bg);border-radius:10px;padding:10px;text-align:center}
+.stats b{display:block;font-size:24px}
+.mut{color:var(--mut);font-size:13px}
+.go{width:100%;padding:16px;font-size:18px;margin-top:6px}
+.pg{display:none}.pg.on{display:block}
+.bar{height:14px;border-radius:7px;background:var(--bad);overflow:hidden;margin:8px 0}.bar i{display:block;height:100%;background:var(--ok)}
+</style>
+</head>
+<body>
+<h1>🎤 Afina Voz</h1>
+
+<div id="pg-lib" class="pg on">
+  <p class="mut">Toque em uma canção para cantar. Tons sugeridos: ajuste se o da sua versão for outro.</p>
+  <div id="list"></div>
+  <div class="card"><b>Adicionar canção</b>
+    <div class="row"><input id="newName" placeholder="Nome da canção"><select id="newKey"></select></div>
+    <div class="row"><button class="b" onclick="addSong()">Adicionar</button></div>
+  </div>
+</div>
+
+<div id="pg-sing" class="pg">
+  <div class="card">
+    <div class="sel"><div class="n" style="flex:1"><div id="songName" style="font-weight:700">Escolha uma canção</div><div class="mut">Tom selecionado</div></div>
+    <select id="keySel"></select></div>
+    <div class="sel"><div style="flex:1" class="mut">Quem está cantando</div><select id="singerSel"></select></div>
+    <div class="row"><input id="newSinger" placeholder="Novo nome"><button class="b" onclick="addSinger()">+</button></div>
+    <label class="mut" style="display:block;margin:10px 0"><input type="checkbox" id="gin"> Modo gincana</label>
+    <div class="stage">
+      <div class="thermo"><div class="mid"></div><div class="fill" id="fill"></div></div>
+      <div><div class="big" id="note">–</div><div class="mut" style="text-align:center" id="cents">&nbsp;</div></div>
+    </div>
+    <div class="status" id="status">Pronto</div>
+    <button class="b go" id="btn" onclick="toggle()">▶ Começar a cantar</button>
+    <div class="stats">
+      <div><b id="sAf">0%</b><span class="mut">afinado</span></div>
+      <div><b id="sDes">0</b><span class="mut">desafinadas</span></div>
+    </div>
+  </div>
+  <p class="mut">Verde: nota dentro do tom (±25 centésimos). Vermelho: fora do tom. Use fones para o som da música não entrar no microfone.</p>
+</div>
+
+<div id="pg-res" class="pg">
+  <div class="card" id="resBox"><p class="mut">Cante uma canção para ver o resultado.</p></div>
+  <h2 style="font-size:16px">Histórico</h2><div id="histList"></div>
+  <button class="b" style="background:var(--bad)" onclick="if(confirm('Apagar todo o histórico?')){hist=[];SV('av_hist',hist);drawHist();drawGin()}">Apagar histórico</button>
+</div>
+<div id="pg-gin" class="pg">
+  <div class="card"><b>🏆 Gincana #<span id="gid"></span></b><div class="mut">Marque “Modo gincana” na aba Cantar. Vale a melhor nota de cada pessoa.</div></div>
+  <div id="ginBox"></div>
+  <button class="b" onclick="newGin()">Nova gincana</button>
+</div>
+
+<div class="tabs">
+  <button class="on" onclick="tab('lib',this)">📚 Biblioteca</button>
+  <button onclick="tab('sing',this)">🎵 Cantar</button>
+  <button onclick="tab('res',this)">📊 Histórico</button>
+  <button onclick="tab('gin',this)">🏆 Gincana</button>
+</div>
+
+<script>
+const N=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const MAJ=[0,2,4,5,7,9,11];
+let songs=[
+ ["Amazing Grace (Graça Maravilhosa)",7],["Santo, Santo, Santo",2],["Rude Cruz",0],
+ ["Tudo é Perdoado",9],["Grandes Coisas",0],["Aleluia",7],["Bondade de Deus",8],
+ ["Pode Chover",4],["Ressuscita-me",2],["Em Espírito e em Verdade",9]
+];
+let key=0,name="",ctx,an,stream,buf,raf,running=false;
+let tot=0,good=0,desaf=0,badRun=0,wasBad=false,lastT=0,last=null;
+const $=id=>document.getElementById(id);
+function opts(el,v){el.innerHTML=N.map((n,i)=>`<option value="${i}">${n}</option>`).join("");el.value=v}
+opts($("newKey"),0);opts($("keySel"),0);
+$("keySel").onchange=e=>key=+e.target.value;
+function render(){$("list").innerHTML=songs.map((s,i)=>`<div class="card song"><div class="n"><b>${s[0]}</b><small>Tom: ${N[s[1]]}</small></div><select onchange="songs[${i}][1]=+this.value;render()">${N.map((n,k)=>`<option value="${k}"${k==s[1]?" selected":""}>${n}</option>`).join("")}</select><button class="b" onclick="pick(${i})">Cantar</button></div>`).join("")}
+function addSong(){const n=$("newName").value.trim();if(!n)return;songs.push([n,+$("newKey").value]);$("newName").value="";render()}
+function pick(i){name=songs[i][0];key=songs[i][1];$("songName").textContent=name;$("keySel").value=key;tab("sing",document.querySelectorAll(".tabs button")[1])}
+function tab(id,btn){document.querySelectorAll(".pg").forEach(p=>p.classList.remove("on"));$("pg-"+id).classList.add("on");document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("on"));btn.classList.add("on")}
+function pitch(b,sr){
+  let rms=0;for(let i=0;i<b.length;i++)rms+=b[i]*b[i];rms=Math.sqrt(rms/b.length);if(rms<0.012)return -1;
+  const minL=Math.floor(sr/1000),maxL=Math.floor(sr/80);let best=-1,bc=0,c=[];
+  for(let l=minL;l<=maxL;l++){let s=0;for(let i=0;i<b.length-l;i+=2)s+=b[i]*b[i+l];c[l]=s}
+  let m=0;for(let l=minL;l<=maxL;l++)if(c[l]>m){m=c[l];best=l}
+  let c0=0;for(let i=0;i<b.length;i+=2)c0+=b[i]*b[i];
+  if(best<0||m/c0<0.5)return -1;
+  const a=c[best-1]||m,z=c[best+1]||m,d=a-2*m+z;let sh=d?(a-z)/(2*d):0;
+  return sr/(best+sh);
+}
+function loop(){
+  raf=requestAnimationFrame(loop);an.getFloatTimeDomainData(buf);
+  const f=pitch(buf,ctx.sampleRate),now=performance.now(),dt=Math.min(now-lastT,100);lastT=now;
+  const fill=$("fill");
+  if(f<0){fill.style.height="5%";fill.style.background="var(--mut)";$("note").textContent="–";$("cents").innerHTML="&nbsp;";$("status").textContent="Ouvindo…";$("status").style.color="var(--mut)";badRun=0;wasBad=false;return}
+  const midi=69+12*Math.log2(f/440),r=Math.round(midi),cents=(midi-r)*100,pc=((r%12)+12)%12;
+  const inKey=MAJ.some(x=>(key+x)%12==pc),ok=inKey&&Math.abs(cents)<=25;
+  tot+=dt;if(ok)good+=dt;
+  if(!ok){badRun+=dt;if(badRun>350&&!wasBad){desaf++;wasBad=true}}else{badRun=0;wasBad=false}
+  $("note").textContent=N[pc];$("cents").textContent=(cents>0?"+":"")+Math.round(cents)+" cents";
+  fill.style.height=(ok?90:40)+"%";fill.style.background=ok?"var(--ok)":"var(--bad)";
+  $("status").textContent=ok?"✔ Afinado":(inKey?"Ajuste a nota":"Fora do tom");$("status").style.color=ok?"var(--ok)":"var(--bad)";
+  $("sAf").textContent=Math.round(good/tot*100)+"%";$("sDes").textContent=desaf;
+}
+async function toggle(){
+  if(running){stop();return}
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})}
+  catch(e){$("status").textContent="Permita o microfone para continuar";return}
+  ctx=new (window.AudioContext||window.webkitAudioContext)();an=ctx.createAnalyser();an.fftSize=2048;buf=new Float32Array(an.fftSize);
+  ctx.createMediaStreamSource(stream).connect(an);
+  tot=good=desaf=badRun=0;wasBad=false;lastT=performance.now();running=true;
+  $("btn").textContent="■ Parar e ver resultado";loop();
+}
+function stop(){
+  running=false;cancelAnimationFrame(raf);stream&&stream.getTracks().forEach(t=>t.stop());ctx&&ctx.close();
+  $("btn").textContent="▶ Começar a cantar";$("status").textContent="Pronto";$("status").style.color="var(--tx)";$("fill").style.height="5%";$("fill").style.background="var(--mut)";
+  const p=tot?Math.round(good/tot*100):0,s=Math.round(tot/1000);
+  saveRun(p,s);const v=p>=85?"Excelente! 🎉":p>=70?"Muito bom!":p>=50?"Dá para melhorar, continue treinando.":"Treine mais com a nota base do tom.";
+  $("resBox").innerHTML=`<b>${esc(name||"Sem canção")}</b> · ${esc(singer())} <span class="mut">· Tom ${N[key]}</span>
+  <div class="big" style="margin:10px 0;color:${p>=70?"var(--ok)":"var(--bad)"}">${p}%</div>
+  <div class="bar"><i style="width:${p}%"></i></div>
+  <div class="stats"><div><b>${desaf}</b><span class="mut">desafinadas</span></div><div><b>${s}s</b><span class="mut">cantados</span></div></div>
+  <p>${v}</p>`;
+  tab("res",document.querySelectorAll(".tabs button")[2]);
+}
+const ST=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
+const SV=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let singers=ST("av_singers",[]),hist=ST("av_hist",[]),gid=ST("av_gid",1);
+function singer(){return $("singerSel").value||"Sem nome"}
+function drawSingers(){const c=$("singerSel").value;$("singerSel").innerHTML=singers.length?singers.map(n=>`<option>${esc(n)}</option>`).join(""):'<option value="">Sem nome</option>';if(singers.includes(c))$("singerSel").value=c}
+function addSinger(){const n=$("newSinger").value.trim();if(!n)return;if(!singers.includes(n))singers.push(n);SV("av_singers",singers);$("newSinger").value="";drawSingers();$("singerSel").value=n}
+function saveRun(p,s){if(s<3)return;hist.unshift({n:singer(),song:name||"Sem canção",k:N[key],p,d:desaf,s,t:Date.now(),g:$("gin").checked?gid:0});hist=hist.slice(0,200);SV("av_hist",hist);drawHist();drawGin()}
+function drawHist(){$("histList").innerHTML=hist.length?hist.map(h=>`<div class="card song"><div class="n"><b>${esc(h.n)}</b> · ${h.p}%<small>${esc(h.song)} · Tom ${h.k} · ${h.d} desafinadas · ${new Date(h.t).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}${h.g?" · 🏆 #"+h.g:""}</small></div></div>`).join(""):'<p class="mut">Nenhuma gravação ainda.</p>'}
+function drawGin(){$("gid").textContent=gid;const b={};hist.filter(h=>h.g===gid).forEach(h=>{const o=b[h.n];if(!o||h.p>o.p||(h.p==o.p&&h.d<o.d))b[h.n]=h});const r=Object.values(b).sort((a,c)=>c.p-a.p||a.d-c.d);const m=["🥇","🥈","🥉"];$("ginBox").innerHTML=r.length?(`<div class="card" style="text-align:center"><div class="mut">Vencedor(a) até agora</div><div class="big" style="font-size:32px">👑 ${esc(r[0].n)}</div></div>`+r.map((h,i)=>`<div class="card song"><div style="font-size:24px">${m[i]||(i+1)+"º"}</div><div class="n"><b>${esc(h.n)}</b><small>${esc(h.song)} · ${h.d} desafinadas</small></div><b>${h.p}%</b></div>`).join("")):'<p class="mut">Ninguém cantou nesta gincana ainda.</p>'}
+function newGin(){if(confirm("Começar uma nova gincana?")){gid++;SV("av_gid",gid);drawGin()}}
+render();drawSingers();drawHist();drawGin();
+</script>
+</body>
+</html>
